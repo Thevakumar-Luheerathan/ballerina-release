@@ -10,7 +10,6 @@ import constants
 SLEEP_INTERVAL = 30 # 30s
 MAX_WAIT_CYCLES = 180 # script timeout is 90 minutes
 
-
 ballerina_bot_username = os.environ[constants.ENV_BALLERINA_BOT_USERNAME]
 ballerina_bot_token = os.environ[constants.ENV_BALLERINA_BOT_TOKEN]
 ballerina_bot_email = os.environ[constants.ENV_BALLERINA_BOT_EMAIL]
@@ -30,47 +29,78 @@ def main():
     except  GithubException:
         print("Temporary branch does not exist")
     dist_repo.create_git_ref(ref='refs/heads/temp-build-time-data' , sha=build_time_data_branch.commit.sha)
+    with open("build-time-data/hello_world.json") as f:
+        hello_world_json_content = f.read()
+    with open("build-time-data/hello_world_service.json") as f:
+        hello_world_service_json_content = f.read()
+    with open("build-time-data/nballerina.json") as f:
+        nballerina_json_content = f.read()
+    # hello_world_json_content=dist_repo.get_contents("build-time-data/hello_world.json","build-time-data")
+    # hello_world__service_json_content=dist_repo.get_contents("build-time-data/hello_world_service.json","build-time-data")
+    # nballerina_json_content=dist_repo.get_contents("build-time-data/nballerina.json","build-time-data")
 
-    hello_world_json_content=dist_repo.get_contents("build-time-data/hello_world.json","build-time-data")
-    hello_world__service_json_content=dist_repo.get_contents("build-time-data/hello_world_service.json","build-time-data")
-    nballerina_json_content=dist_repo.get_contents("build-time-data/nballerina.json","build-time-data")
-
-    hello_world_json_content = hello_world_json_content.decoded_content.decode(constants.ENCODING)
-    hello_world__service_json_content = hello_world__service_json_content.decoded_content.decode(constants.ENCODING)
-    nballerina_json_content = nballerina_json_content.decoded_content.decode(constants.ENCODING)
+    # hello_world_json_content = hello_world_json_content.decoded_content.decode(constants.ENCODING)
+    # hello_world__service_json_content = hello_world__service_json_content.decoded_content.decode(constants.ENCODING)
+    # nballerina_json_content = nballerina_json_content.decoded_content.decode(constants.ENCODING)
 
     author = InputGitAuthor(ballerina_bot_username, ballerina_bot_email)
 
-    dist_repo.update_file(
-                    "build-time-data/hello_world.json",
-                    "Add hello_world.json",
-                    hello_world_json_content,
-                    dist_repo.get_contents("build-time-data/hello_world.json","build-time-data").sha,
-                    branch="temp-build-time-data",
-                    author=author
-                )
-    dist_repo.update_file(
-                    "build-time-data/hello_world_service.json",
-                    "Add hello_world_service.json",
-                    hello_world__service_json_content,
-                    dist_repo.get_contents("build-time-data/hello_world_service.json","build-time-data").sha,
-                    branch="temp-build-time-data",
-                    author=author
-                )
+    try:
+        dist_repo.update_file(
+                        "build-time-data/hello_world.json",
+                        "Add hello_world.json",
+                        hello_world_json_content,
+                        dist_repo.get_contents("build-time-data/hello_world.json","build-time-data").sha,
+                        branch="temp-build-time-data",
+                        author=author
+                    )
+        dist_repo.update_file(
+                        "build-time-data/hello_world_service.json",
+                        "Add hello_world_service.json",
+                        hello_world_service_json_content,
+                        dist_repo.get_contents("build-time-data/hello_world_service.json","build-time-data").sha,
+                        branch="temp-build-time-data",
+                        author=author
+                    )
 
-    dist_repo.update_file(
-                    "build-time-data/nballerina.json",
-                    "Add nballerina.json",
-                    hello_world__service_json_content,
-                    dist_repo.get_contents("build-time-data/nballerina.json","build-time-data").sha,
-                    branch="temp-build-time-data",
-                    author=author
-                )
+        dist_repo.update_file(
+                        "build-time-data/nballerina.json",
+                        "Add nballerina.json",
+                        nballerina_json_content,
+                        dist_repo.get_contents("build-time-data/nballerina.json","build-time-data").sha,
+                        branch="temp-build-time-data",
+                        author=author
+                    )
+    except Exception:
+
+        dist_repo.create_file(
+                        "build-time-data/hello_world.json",
+                        "Add hello_world.json",
+                        hello_world_json_content,
+                        branch="temp-build-time-data",
+                        author=author
+                    )
+        dist_repo.create_file(
+                        "build-time-data/hello_world_service.json",
+                        "Add hello_world_service.json",
+                        hello_world_service_json_content,
+                        branch="temp-build-time-data",
+                        author=author
+                    )
+
+        dist_repo.create_file(
+                        "build-time-data/nballerina.json",
+                        "Add nballerina.json",
+                        nballerina_json_content,
+                        branch="temp-build-time-data",
+                        author=author
+                    )
+
 
     time.sleep(5)
     pr=create_pull_request(dist_repo)
     module = {'name': 'ballerina-release', 'auto_merge': True}
-    approve_pr(module, 'TRUE', pr.number)
+    #approve_pr(module, 'TRUE', pr.number)
     ref = dist_repo.get_git_ref('heads/temp-build-time-data')
     pending = True
     wait_cycles = 0
@@ -115,9 +145,9 @@ def create_pull_request(repo):
                         head="temp-build-time-data",
                         base="build-time-data"
                     )
-        log_message = "[Info] Automated build time stats generation for branch build-time-data" +  \
-                      + "'. PR: " + created_pr.html_url
-        print(log_message)
+        # log_message = "[Info] Automated build time stats generation for branch build-time-data" +  \
+        #               + "'. PR: " + created_pr.html_url
+        # print(log_message)
         return created_pr
     except Exception as e:
         print("[Error] Error occurred while creating pull request for branch build-time-data.", e)
